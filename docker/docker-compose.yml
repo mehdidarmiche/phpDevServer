@@ -81,30 +81,43 @@ services:
       image: certbot/certbot
       networks:
         - network-dev
+#### WORKSPACE CONATINER ##############################
+    workspace:
+      image: phpdocker/workspace
+      build:
+        context: ./phpdocker/workspace
+        dockerfile: Dockerfile
+        args:
+          - APP_CODE_PATH=/var/www/
+          - APP_GROUP=ubuntu
+          - APP_GROUP_ID=1000
+          - APP_USER=ubuntu
+          - APP_USER_ID=1000
+          - TARGET_PHP_VERSION=7.2
+          - TZ=Europe/Zurich
+      volumes:
+        - ../projects:/var/www
+      networks:
+        - network-dev
 #############################################################
 ##########PORTAINER#########
 
-    agent:
-      image: portainer/agent
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-        - /var/lib/docker/volumes:/var/lib/docker/volumes
-      networks:
-        - agent_network
     portainer:
-      image: portainer/portainer
-      command: -H tcp://tasks.agent:9001 --tlsskipverify
-      ports:
-        - "9000:9000"
-        - "8000:8000"
-      volumes:
-        - portainer_data:/data
-      networks:
-        - agent_network
+        image: portainer/portainer
+        ports:
+            - '8000:8000'
+            - '9000:9000'
+        volumes:
+            - '/var/run/docker.sock:/var/run/docker.sock'
+            - 'portainer_data:/data'
+        networks:
+        - network-dev
+        
 networks:
   agent_network:
     driver: bridge
   network-dev:
+    driver: bridge
 ### Volumes Setup #############################################
 
 volumes:
