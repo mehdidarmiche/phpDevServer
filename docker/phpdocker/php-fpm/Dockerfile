@@ -3,10 +3,21 @@ FROM php:7.2-fpm
 # Fix debconf warnings upon build
 ARG DEBIAN_FRONTEND=noninteractive
 
-
 # Locales
 RUN apt-get update \
 	&& apt-get install -y locales
+
+### Create www-data ####################
+
+
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+RUN userdel -f www-data &&\
+    if getent group www-data ; then groupdel www-data; fi &&\
+    groupadd -g ${GROUP_ID} www-data &&\
+    useradd -l -u ${USER_ID} -g www-data www-data 
+
 
 RUN dpkg-reconfigure locales \
 	&& locale-gen C.UTF-8 \
@@ -25,7 +36,10 @@ RUN apt-get update \
 		openssl \
 		git \
     gnupg2 \
-		wget
+		wget \
+		libzip-dev \
+		zip \
+		unzip
 
 
 # PHP
@@ -103,8 +117,47 @@ RUN curl -sL https://deb.nodesource.com/setup_8.x | bash - \
 RUN apt-get update \
   && apt-get install -y xvfb libfontconfig wkhtmltopdf
 
+
+
+
+COPY .ssh/insecure_id_rsa /tmp/id_rsa
+COPY .ssh/insecure_id_rsa.pub /tmp/id_rsa.pub
+
+RUN rm -f /etc/service/sshd/down && \
+    mkdir -p ~/.ssh/ \
+    && touch ~/.ssh/authorized_keys \
+    cat /tmp/id_rsa.pub >> ~/.ssh/authorized_keys \
+        && cat /tmp/id_rsa.pub >> ~/.ssh/id_rsa.pub \
+        && cat /tmp/id_rsa >> ~/.ssh/id_rsa \
+        && rm -f /tmp/id_rsa* \
+        && chmod 644 ~/.ssh/authorized_keys ~/.ssh/id_rsa.pub \
+    && chmod 600 ~/.ssh/id_rsa 
+
+
+#### script alias ######################
+
+COPY ./scripts/aliases.sh /root/aliases.sh
+COPY ./scripts/aliases.sh /home/www-data/aliases.sh
+
+
+RUN sed -i 's/\r//' /root/aliases.sh && \
+    sed -i 's/\r//' /home/www-data/aliases.sh && \
+    chown www-data:www-data /home/www-data/aliases.sh && \
+    echo "" >> ~/.bashrc && \
+    echo "# Load Custom Aliases" >> ~/.bashrc && \
+    echo "source ~/aliases.sh" >> ~/.bashrc && \
+	  echo "" >> ~/.bashrc
+
+#######################################
+
+RUN git config --global user.email "mehdi.darmiche@gmail.com" && \
+    git config --global user.name "Mehdi darmiche"
+ 
 # Clean
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/*
+
+
+
 
 WORKDIR "/var/www"
