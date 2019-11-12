@@ -20,6 +20,8 @@ coverage/
 data/
 dist/
 node_modules/
+projects/
+projects/*
 tmp/
 temp/
 plugins/ios.

@@ -39,7 +39,8 @@ RUN apt-get update \
 		wget \
 		libzip-dev \
 		zip \
-		unzip
+		unzip \
+		cron
 
 
 # PHP
@@ -152,12 +153,29 @@ RUN sed -i 's/\r//' /root/aliases.sh && \
 
 RUN git config --global user.email "mehdi.darmiche@gmail.com" && \
     git config --global user.name "Mehdi darmiche"
- 
+
+#### script alias ######################
+
+# Create the log file
+RUN touch /var/log/schedule.log
+RUN chmod 0777 /var/log/schedule.log
+
+COPY ./crontab/pushcrone /etc/cron.d/pushcrone
+
+RUN crontab /etc/cron.d/pushcrone
+
+########################################
 # Clean
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/*
 
-
-
+#!/bin/bash
 
 WORKDIR "/var/www"
+
+COPY ./entrypoint.sh /
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT /entrypoint.sh
+
+
+

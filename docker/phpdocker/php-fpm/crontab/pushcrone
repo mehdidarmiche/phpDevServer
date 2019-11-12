@@ -1,0 +1,4 @@
+0 9 * * * /usr/local/bin/php /var/www/SnapMyMind/bin/console notification:expireCoupon >> /var/log/schedule.log 2>&1
+0 9 * * THU /usr/local/bin/php /var/www/SnapMyMind/bin/console notification:newCoupon >> /var/log/schedule.log 2>&1
+# Don't remove the empty line at the end of this file. It is required to run the cron job
+
